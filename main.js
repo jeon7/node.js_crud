@@ -1,8 +1,11 @@
-var http = require("http");
-var fs = require("fs");
-var url = require("url");
-var qs = require("querystring");
+var http = require('http');
+var fs = require('fs');
+var url = require('url');
+var qs = require('querystring');
+var path = require('path');
+var template = require('./lib/template.js');
 var dirData = "./data";
+
 
 var app = http.createServer(function (request, response) {
   var queryString = request.url;
@@ -32,24 +35,24 @@ app.listen(3000);
 
 function showWebpage(title, response) {
   var list;
-  var template;
+  var html;
   if (title === undefined) {
     fs.readdir(dirData, function (error, fileList) {
       title = "Welcome";
       var description = "Hello Node.js";
-      list = templateList(fileList);
+      list = template.list(fileList);
       var control = `
         <a href="/create">create</a>
         `;
-      template = templateHTML(title, list, `<h2>${title}</h2>${description}`, control);
+      html = template.html(title, list, `<h2>${title}</h2>${description}`, control);
       response.writeHead(200);
-      response.end(template);
+      response.end(html);
     });
   }
   else {
     fs.readFile(`data/${title}`, "utf8", function (err, description) {
       fs.readdir(dirData, function (error, fileList) {
-        list = templateList(fileList);
+        list = template.list(fileList);
         var control = `
         <a href="/create">create</a>
         <a href="/update?id=${title}">update</a>
@@ -60,9 +63,9 @@ function showWebpage(title, response) {
           <input type="submit" value="delete">
         </form>
         `;
-        template = templateHTML(title, list, `<h2>${title}</h2>${description}`, control);
+        html = template.html(title, list, `<h2>${title}</h2>${description}`, control);
         response.writeHead(200);
-        response.end(template);
+        response.end(html);
       });
     });
   }
@@ -70,7 +73,7 @@ function showWebpage(title, response) {
 
 function create(title, response) {
   fs.readdir(dirData, function (error, fileList) {
-    var list = templateList(fileList);
+    var list = template.list(fileList);
     title = "WEB - create";
     var body = `
     <form action="create_process" method="POST">
@@ -80,9 +83,9 @@ function create(title, response) {
     </form>
     `;
     var control = ``;
-    var template = templateHTML(title, list, body, control);
+    var html = template.html(title, list, body, control);
     response.writeHead(200);
-    response.end(template);
+    response.end(html);
   });
 }
 
@@ -121,7 +124,7 @@ function createProcess(request, response) {
 function update(title, response) {
   fs.readFile(`data/${title}`, "utf8", function (err, description) {
     fs.readdir(dirData, function (error, fileList) {
-      list = templateList(fileList);
+      list = template.list(fileList);
       var body = `
         <form action="update_process" method="POST">
         <p><input type="hidden" name="title_origin" value="${title}")</p>
@@ -131,9 +134,9 @@ function update(title, response) {
         </form>
         `;
       var control = ``;
-      template = templateHTML(title, list, body, control);
+      html = template.html(title, list, body, control);
       response.writeHead(200);
-      response.end(template);
+      response.end(html);
     });
   });
 }
@@ -197,7 +200,7 @@ function deleteProcess(request, response) {
     console.log(post);
     console.log(`postTitle-${postTitle}`);
 
-    fs.unlink(`data/${postTitle}`, function(err){
+    fs.unlink(`data/${postTitle}`, function (err) {
 
     });
 
@@ -205,31 +208,4 @@ function deleteProcess(request, response) {
     response.end();
 
   });
-}
-
-function templateList(fileList) {
-  var list = `<ul>`;
-  for (var i = 0; i < fileList.length; i++) {
-    list += `<li><a href="/?id=${fileList[i]}">${fileList[i]}</a></li>`;
-  }
-  list += `</ul>`;
-  return list;
-}
-
-function templateHTML(title, list, body, control) {
-  return `
-  <!doctype html>
-  <html>
-  <head>
-    <title>WEB - ${title}</title>
-    <meta charset="utf-8">
-  </head>
-  <body>
-    <h1><a href="/">WEB</a></h1>
-    ${list}
-    ${control}
-    ${body}
-  </body>
-  </html>
-  `;
 }
